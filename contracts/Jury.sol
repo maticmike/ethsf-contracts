@@ -18,8 +18,9 @@ contract Jury is IJury, Pausable {
     bool verdict;
 
     /** DATA STRUCTURES **/
-    //disputes that stret
     mapping(uint256 => Dispute) public disputes;
+    mapping(uint256 => JuryMember) public approvedJuror;
+
     mapping(address => bool) public eligibleJuryMembers;
     mapping(uint256 => Jury) public juries;
     mapping(uint256 => bool) public juryIsLive;
@@ -48,12 +49,14 @@ contract Jury is IJury, Pausable {
     }
 
     /*** FUNCTIONS ***/
-    function newDispute(
+    function newDisputeProposal(
         address _plaintiff,
         address _defendent,
         uint256 _deadline
     ) external {
         Jury liveJury = juries[juryPointer];
+
+        require()
 
         for (uint256 i = 0; i < liveJury.juryMembers.length; i++) {
             require(
@@ -66,10 +69,11 @@ contract Jury is IJury, Pausable {
         _newDispute(_plaintiff, _defendent, _deadline);
     }
 
-    function extendDisputeDeadline(uint256 _juryId) external {
+    function newDisputeSubmission() 
+
+    function extendDisputeDeadline(uint256 _disputeId) external {
         //require (half jurors to agree to extension)
-        uint256 newDeadline = disputes[disputeId]
-            .deadline += increaseDeadlineAmount;
+        uint256 newDeadline = disputes[_disputeId].deadline += increaseDeadlineAmount;
         emit DisputeDeadlinePostponed(_juryId, newDeadline);
     }
 

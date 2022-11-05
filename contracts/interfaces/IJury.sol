@@ -10,6 +10,7 @@ interface IJury {
     struct JuryMember {
         address memberAddr;
         uint256 jurysParticipated;
+        uint256 disputesApproved;
         uint256 disputesResolved;
         bool vote;
     }
