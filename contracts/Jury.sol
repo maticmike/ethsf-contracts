@@ -8,16 +8,21 @@ import "./interfaces/IJury.sol";
  * @dev One jury per protocol
  */
 contract Jury is IJury, Pausable {
-    uint256 juryId;
+    uint256 constant minJurySize = 10;
+    uint256 constant increaseDeadlineAmount = 86400;
+
+    uint256 juryPointer;
     uint256 disputeId;
 
     /** STORAGE **/
     bool verdict;
 
     /** DATA STRUCTURES **/
+    //disputes that stret
     mapping(uint256 => Dispute) public disputes;
     mapping(address => bool) public eligibleJuryMembers;
-    mapping(address => JuryMember) public liveJuryMembers;
+    mapping(uint256 => Jury) public juries;
+    mapping(uint256 => bool) public juryIsLive;
 
     /** MODIFIER **/
     modifier onlyJuryMember() {
@@ -28,16 +33,44 @@ contract Jury is IJury, Pausable {
         _;
     }
 
+    /*** CONSTRUCTOR ***/
     constructor(address[] _initialJuryMembers) {
+        require(
+            _initialJuryMembers.length == minJurySize,
+            "Jury.constructor: not enough jury members"
+        );
         for (uint256 i = 0; i < _initialJuryMembers.length; i++) {
             eligibleJuryMembers[_initialJuryMembers[i]] = true;
             emit NewEligibleJuryMember(_initialJuryMembers[i]);
         }
+        juryPointer += 1;
+        juryIsLive[juryPointer] = true;
     }
 
     /*** FUNCTIONS ***/
-    function newDispute(address _plaintiff, address _defendent) external {
-        _newDispute(_plaintiff, _defendent);
+    function newDispute(
+        address _plaintiff,
+        address _defendent,
+        uint256 _deadline
+    ) external {
+        Jury liveJury = juries[juryPointer];
+
+        for (uint256 i = 0; i < liveJury.juryMembers.length; i++) {
+            require(
+                liveJury.juryMembers[i].juryMember != plaintiff ||
+                    liveJury.juryMembers[i].juryMember != _defendent,
+                "Jury.newDispute: live jury member cannot be involved"
+            );
+        }
+
+        _newDispute(_plaintiff, _defendent, _deadline);
+    }
+
+    function extendDisputeDeadline(uint256 _juryId) external {
+        //require (half jurors to agree to extension)
+        uint256 newDeadline = disputes[disputeId]
+            .deadline += increaseDeadlineAmount;
+        emit DisputeDeadlinePostponed(_juryId, newDeadline);
     }
 
     function voteYes() external onlyJuryMember {}
@@ -55,21 +88,28 @@ contract Jury is IJury, Pausable {
      * @dev lock up jury members to specific jury id
      */
     function newLiveJury() external {
-        juryId += 1;
-        emit JuryDutyCompleted(juryId);
+        juryPointer += 1;
+        juryIsLive[juryPointer] = true;
+        juryIsLive[juryPointer - 1] = false;
+        emit JuryDutyCompleted(juryPointer);
     }
 
     /*** HELPER FUNCTIONS ***/
-    function _newDispute(address _plaintiff, address _defendent) internal {
+    function _newDispute(
+        address _plaintiff,
+        address _defendent,
+        uint256 _deadline
+    ) internal {
         disputeId += 1;
         disputessfd[disputeId] = Dispute({
-            juryId: juryId,
+            juryPointer: juryPointer,
             disputeId: disputeId,
+            deadline: _deadline,
             plaintiff: _plaintiff,
             defendent: _denfendent,
             verdict: false
         });
-        emit NewDispute(disputeID, juryId);
+        emit NewDispute(disputeID, juryPointer);
     }
 
     function _setVerdict() internal {}
