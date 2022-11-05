@@ -87,10 +87,20 @@ contract Jury is IJury, Pausable {
     /**
      * @dev lock up jury members to specific jury id
      */
-    function newLiveJury() external {
+    function newLiveJury(address[] _juryMembers) external {
         juryPointer += 1;
         juryIsLive[juryPointer] = true;
         juryIsLive[juryPointer - 1] = false;
+        juries[juryPointer].jurydId = juryPointer;
+        for (uint256 i = 0; i < _juryMembers.length; i++) {
+            JuryMember juryMember = eligibleJuryMembers[_juryMembers[i]];
+            juries[juryPointer].juryMembers = JuryMember({
+                memberAddr: _juryMembers[i],
+                jurysParticipated: juryMember.jurysParticipated += 1,
+                disputesResolved: juryMember.disputesResolved
+                vote: false; 
+            })
+        }
         emit JuryDutyCompleted(juryPointer);
     }
 
