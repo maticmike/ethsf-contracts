@@ -26,18 +26,8 @@ contract SoulFundFactory is ISoulFundFactory {
             "SoulFundFactory.deployNewSoulFund: vesting must be sometime in the future"
         );
 
-        SoulFund soulFund = new SoulFund(
-            msg.sender,
-            _vestingDate,
-            s_data,
-            s_gateway,
-            s_gasReceiver
-        );
+        SoulFund soulFund = new SoulFund(msg.sender, _vestingDate, s_data, s_gateway, s_gasReceiver);
 
-        emit NewSoulFundTokenDeployed(
-            address(soulFund),
-            msg.sender,
-            _vestingDate
-        );
+        emit NewSoulFundTokenDeployed(address(soulFund), msg.sender, _vestingDate);
     }
 }

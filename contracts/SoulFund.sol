@@ -72,8 +72,7 @@ contract SoulFund is ISoulFund, ERC721, AccessControl, AxelarExecutable {
     ) external payable override onlyRole(GRANTER_ROLE) {
         // require that currency exists or max has not been reached
         require(
-            currencyIndices[soulFundId][currency] >= 0 &&
-                numCurrencies[soulFundId] < 5,
+            currencyIndices[soulFundId][currency] >= 0 && numCurrencies[soulFundId] < 5,
             "SoulFund.depositFund: max currency type reached."
         );
 
@@ -93,10 +92,7 @@ contract SoulFund is ISoulFund, ERC721, AccessControl, AxelarExecutable {
         // add fund
         if (currency == address(0)) {
             // treat as eth
-            require(
-                msg.value == amount,
-                "SoulFund.depositFund: amount mismatch."
-            );
+            require(msg.value == amount, "SoulFund.depositFund: amount mismatch.");
         } else {
             // treat as erc20
             IERC20(currency).transferFrom(msg.sender, address(this), amount);
@@ -118,21 +114,13 @@ contract SoulFund is ISoulFund, ERC721, AccessControl, AxelarExecutable {
         address _to,
         uint256 _tokenId
     ) internal override {
-        require(
-            _from == address(0),
-            "SoulFund: soul bound token cannot be transferred"
-        );
+        require(_from == address(0), "SoulFund: soul bound token cannot be transferred");
         super._beforeTokenTransfer(_from, _to, _tokenId);
     }
 
     // The following functions are overrides required by Solidity.
 
-    function supportsInterface(bytes4 _interfaceId)
-        public
-        view
-        override(ERC721, AccessControl)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 _interfaceId) public view override(ERC721, AccessControl) returns (bool) {
         return super.supportsInterface(_interfaceId);
     }
 
@@ -162,10 +150,7 @@ contract SoulFund is ISoulFund, ERC721, AccessControl, AxelarExecutable {
     //Claim 5% of funds in contract with claimToken (nft)
     function _claimFundsEarly(uint256 _soulFundId, address _holder) internal {
         address beneficiary = ownerOf(_soulFundId);
-        require(
-            _holder == beneficiary,
-            "SoulFund.claimFundsEarly: invalid address"
-        );
+        require(_holder == beneficiary, "SoulFund.claimFundsEarly: invalid address");
 
         // require(
         //     IERC721(_nftAddress).ownerOf(_nftId) == beneficiary,
@@ -193,15 +178,8 @@ contract SoulFund is ISoulFund, ERC721, AccessControl, AxelarExecutable {
         emit VestedFundsClaimedEarly(_soulFundId, aggregatedAmount);
     }
 
-    function claimAllVestedFunds(uint256 _soulFundId)
-        external
-        payable
-        override
-    {
-        require(
-            ownerOf(_soulFundId) != address(0),
-            "SoulFund.claimFundsEarly: fund does not exist"
-        );
+    function claimAllVestedFunds(uint256 _soulFundId) external payable override {
+        require(ownerOf(_soulFundId) != address(0), "SoulFund.claimFundsEarly: fund does not exist");
 
         _transferAllFunds(_soulFundId, 1);
 
@@ -211,15 +189,12 @@ contract SoulFund is ISoulFund, ERC721, AccessControl, AxelarExecutable {
         emit VestedFundClaimed(_soulFundId, aggregatedAmount);
     }
 
-    function _transferAllFunds(uint256 _soulFundId, uint256 percentage)
-        internal
-    {
+    function _transferAllFunds(uint256 _soulFundId, uint256 percentage) internal {
         // loop through all currencies
         require(percentage <= 10000, "Percent too high");
         for (uint256 i = 0; i < numCurrencies[_soulFundId]; i++) {
             address currency = balances[_soulFundId][i].token;
-            uint256 amount = (balances[_soulFundId][i].balance * percentage) /
-                10000;
+            uint256 amount = (balances[_soulFundId][i].balance * percentage) / 10000;
 
             // mutex may be necessary (claimAllVested && claimFundsEarly)
             balances[_soulFundId][i].balance -= amount;
@@ -233,21 +208,11 @@ contract SoulFund is ISoulFund, ERC721, AccessControl, AxelarExecutable {
         }
     }
 
-    function balancesExt(uint256 _tokenId)
-        external
-        view
-        returns (Balances[5] memory)
-    {
+    function balancesExt(uint256 _tokenId) external view returns (Balances[5] memory) {
         return balances[_tokenId];
     }
 
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        virtual
-        override
-        returns (string memory)
-    {
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(_exists(tokenId), "Token does not exist");
 
         return renderer.renderToken(address(this), tokenId);
@@ -259,10 +224,7 @@ contract SoulFund is ISoulFund, ERC721, AccessControl, AxelarExecutable {
         string calldata sourceAddress_,
         bytes calldata payload_
     ) internal override {
-        (address holder, uint256 soulFundId) = abi.decode(
-            payload_,
-            (address, uint256)
-        );
+        (address holder, uint256 soulFundId) = abi.decode(payload_, (address, uint256));
         sourceChain = sourceChain_;
         sourceAddress = sourceAddress_;
 

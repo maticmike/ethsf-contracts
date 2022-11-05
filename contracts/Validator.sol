@@ -51,33 +51,18 @@ contract Validator {
     }
 
     function whitelistNft(address _newNftAddress) external {
-        require(
-            whitelistedNfts[_newNftAddress] == false,
-            "validator.whitelistNft: address already added"
-        );
-        require(
-            _newNftAddress != address(0),
-            "validator.whitelistNft: cannot add 0 address"
-        );
+        require(whitelistedNfts[_newNftAddress] == false, "validator.whitelistNft: address already added");
+        require(_newNftAddress != address(0), "validator.whitelistNft: cannot add 0 address");
 
         whitelistedNfts[_newNftAddress] = true;
 
         emit NewWhitelistedNFT(_newNftAddress);
     }
 
-    function _validate(address _nftAddress, uint256 _nftId)
-        internal
-        returns (address)
-    {
-        require(
-            whitelistedNfts[_nftAddress],
-            "SoulFund.claimFundsEarly: NFT not whitelisted"
-        );
+    function _validate(address _nftAddress, uint256 _nftId) internal returns (address) {
+        require(whitelistedNfts[_nftAddress], "SoulFund.claimFundsEarly: NFT not whitelisted");
 
-        require(
-            !nftIsSpent[_nftAddress],
-            "SoulFund.claimFundsEarly: Claim token NFT has already been spent"
-        );
+        require(!nftIsSpent[_nftAddress], "SoulFund.claimFundsEarly: Claim token NFT has already been spent");
 
         return IERC721Upgradeable(_nftAddress).ownerOf(_nftId);
     }

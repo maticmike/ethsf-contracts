@@ -133,13 +133,9 @@ contract TokenRenderer is UUPSUpgradeable, OwnableUpgradeable {
         // get USD value of tokens, create total $USD using chainlink aggregator
         for (uint256 i = 0; i < _balances.length; i++) {
             usdValues[i] =
-                (_getPrice(tokenToAttributes[_balances[i].token].aggregator) *
-                    _balances[i].balance) /
+                (_getPrice(tokenToAttributes[_balances[i].token].aggregator) * _balances[i].balance) /
                 1 ether;
-            totalUSD +=
-                (_getPrice(tokenToAttributes[_balances[i].token].aggregator) *
-                    _balances[i].balance) /
-                1 ether;
+            totalUSD += (_getPrice(tokenToAttributes[_balances[i].token].aggregator) * _balances[i].balance) / 1 ether;
         }
 
         // populate metadata with individual token holdings in $USD
@@ -187,13 +183,8 @@ contract TokenRenderer is UUPSUpgradeable, OwnableUpgradeable {
     }
 
     // render token function called by TokenURI
-    function renderToken(address _soulfund, uint256 _tokenId)
-        public
-        view
-        returns (string memory)
-    {
-        ISoulFund.Balances[5] memory balances = ISoulFund(_soulfund)
-            .balancesExt(_tokenId);
+    function renderToken(address _soulfund, uint256 _tokenId) public view returns (string memory) {
+        ISoulFund.Balances[5] memory balances = ISoulFund(_soulfund).balancesExt(_tokenId);
         string memory metadata;
         uint256 totalUSD;
         uint256[] memory percentages;
