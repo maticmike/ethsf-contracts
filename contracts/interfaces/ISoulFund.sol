@@ -8,19 +8,11 @@ interface ISoulFund {
         uint256 balance;
     }
 
-    event FundDeposited(
-        uint256 soulFundId,
-        address currency,
-        uint256 amount,
-        address beneficary
-    );
+    event FundDeposited(uint256 soulFundId, address currency, uint256 amount, address beneficary);
 
     event NewWhitelistedNFT(address newNftAddress);
 
-    event VestedFundsClaimedEarly(
-        uint256 tokenId,
-        uint256 rewardAmount
-    );
+    event VestedFundsClaimedEarly(uint256 tokenId, uint256 rewardAmount);
     event VestedFundClaimed(uint256 soulFundId, uint256 vestedAmount);
 
     function depositFund(
@@ -29,10 +21,7 @@ interface ISoulFund {
         uint256 amount
     ) external payable;
 
-    function balancesExt(uint256 _tokenId)
-        external
-        view
-        returns (Balances[5] memory);
+    function balancesExt(uint256 _tokenId) external view returns (Balances[5] memory);
 
     // function whitelistNft(address _newNftAddress, uint256 _tokenId) external;
 
@@ -44,5 +33,5 @@ interface ISoulFund {
 
     function claimAllVestedFunds(uint256 _soulFundId) external payable;
 
-    function vestingDate() external view returns(uint256);
+    function vestingDate() external view returns (uint256);
 }
