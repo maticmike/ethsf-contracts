@@ -2,10 +2,10 @@
 pragma solidity ^0.8.7;
 
 interface IJury {
-    struct Jury {
-        address juryId;
-        JuryMember[] juryMembers;
-    }
+    // struct Jury {
+    //     uint256 juryId;
+    //     JuryMember[] juryMembers;
+    // }
 
     struct JuryMember {
         address memberAddr;
@@ -13,6 +13,11 @@ interface IJury {
         uint256 disputesApproved;
         uint256 disputesResolved;
         bool vote;
+    }
+
+    struct DisputeProposal {
+        address[] approvedJurors;
+        bool isApproved;
     }
 
     struct Dispute {
@@ -26,7 +31,7 @@ interface IJury {
 
     //Jury Events
     event NewLiveJury(uint256 juryId, address[] indexed juryMemebers);
-    event NewEligibleJuryMember(address juryMemeber);
+    event NewJuryPoolMember(address juryMemeber);
     event RemovedJuryMember(address juryMember);
     event JuryDutyCompleted(uint256 indexed jurydId);
 
@@ -43,9 +48,9 @@ interface IJury {
      */
     function setJuryType() external;
 
-    function addEligibleJuryMember() external;
+    function addJuryPoolMember() external;
 
-    function removeEligibleJuryMember() external;
+    function removeJuryPoolMember() external;
 
     /**
      * @dev lock up jury members to specific jury id
