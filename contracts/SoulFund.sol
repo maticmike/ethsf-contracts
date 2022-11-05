@@ -3,7 +3,6 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import {AxelarExecutable} from "@axelar-network/axelar-utils-solidity/contracts/executables/AxelarExecutable.sol";
 import {IAxelarGateway} from "@axelar-network/axelar-utils-solidity/contracts/interfaces/IAxelarGateway.sol";
@@ -12,16 +11,8 @@ import {IAxelarGasService} from "@axelar-network/axelar-cgp-solidity/contracts/i
 import "./interfaces/ISoulFund.sol";
 import "./interfaces/ITokenRenderer.sol";
 
-contract SoulFund is
-    ISoulFund,
-    ERC721,
-    Pausable,
-    AccessControl,
-    AxelarExecutable
-{
-
+contract SoulFund is ISoulFund, ERC721, AccessControl, AxelarExecutable {
     /*** CONSTANTS ***/
-    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant GRANTER_ROLE = keccak256("GRANTER_ROLE");
     bytes32 public constant BENEFICIARY_ROLE = keccak256("BENEFICIARY_ROLE");
 
@@ -56,7 +47,7 @@ contract SoulFund is
     ITokenRenderer renderer;
 
     constructor(
-        address _beneficiary,
+        address _granter,
         uint256 _vestingDate,
         address _data,
         address gateway_,
@@ -64,24 +55,14 @@ contract SoulFund is
     ) payable ERC721("SoulFund", "SLF") {
         // __ERC721_init("SoulFund", "SLF");
 
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(PAUSER_ROLE, msg.sender);
-        _grantRole(GRANTER_ROLE, msg.sender);
-        _grantRole(BENEFICIARY_ROLE, _beneficiary);
+        _grantRole(DEFAULT_ADMIN_ROLE, _granter);
+        _grantRole(GRANTER_ROLE, _granter);
 
         vestingDate = _vestingDate;
         renderer = ITokenRenderer(_data);
 
         gasReceiver = IAxelarGasService(gasReceiver_);
         _gateway = IAxelarGateway(gateway_);
-    }
-
-    function pause() public onlyRole(PAUSER_ROLE) {
-        _pause();
-    }
-
-    function unpause() public onlyRole(PAUSER_ROLE) {
-        _unpause();
     }
 
     function depositFund(
@@ -125,9 +106,10 @@ contract SoulFund is
         emit FundDeposited(soulFundId, currency, amount, ownerOf(soulFundId));
     }
 
-    function safeMint(address _to) public onlyRole(GRANTER_ROLE) {
+    function safeMint(address _to) external onlyRole(GRANTER_ROLE) {
         uint256 tokenId = _tokenIdCounter;
         _tokenIdCounter++;
+        _grantRole(BENEFICIARY_ROLE, _to);
         _safeMint(_to, tokenId);
     }
 
@@ -135,7 +117,7 @@ contract SoulFund is
         address _from,
         address _to,
         uint256 _tokenId
-    ) internal override whenNotPaused {
+    ) internal override {
         require(
             _from == address(0),
             "SoulFund: soul bound token cannot be transferred"
@@ -179,11 +161,6 @@ contract SoulFund is
 
     //Claim 5% of funds in contract with claimToken (nft)
     function _claimFundsEarly(uint256 _soulFundId, address _holder) internal {
-        // require(
-        //     whitelistedNfts[_soulFundId][_nftAddress],
-        //     "SoulFund.claimFundsEarly: NFT not whitelisted"
-        // );
-
         address beneficiary = ownerOf(_soulFundId);
         require(
             _holder == beneficiary,

@@ -1,17 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.9;
 
 interface ISoulFundFactory {
     event NewSoulFundTokenDeployed(
         address indexed tokenAddress,
-        address indexed beneficiary,
-        uint256 vestingDate,
-        uint256 depositedAmount
+        address indexed granter,
+        uint256 vestingDate
     );
 
-    function deployNewSoulFund(
-        address _beneficiary,
-        uint256 _vestingDate
-        // uint256 _depositAmount  FOR ERC20s <<<<<<
-    ) external payable;
+    function deployNewSoulFund(uint256 _vestingDate) external;
 }

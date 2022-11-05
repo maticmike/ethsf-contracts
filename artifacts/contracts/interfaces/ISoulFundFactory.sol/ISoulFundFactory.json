@@ -15,19 +15,13 @@
         {
           "indexed": true,
           "internalType": "address",
-          "name": "beneficiary",
+          "name": "granter",
           "type": "address"
         },
         {
           "indexed": false,
           "internalType": "uint256",
           "name": "vestingDate",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "depositedAmount",
           "type": "uint256"
         }
       ],
@@ -37,11 +31,6 @@
     {
       "inputs": [
         {
-          "internalType": "address",
-          "name": "_beneficiary",
-          "type": "address"
-        },
-        {
           "internalType": "uint256",
           "name": "_vestingDate",
           "type": "uint256"
@@ -49,7 +38,7 @@
       ],
       "name": "deployNewSoulFund",
       "outputs": [],
-      "stateMutability": "payable",
+      "stateMutability": "nonpayable",
       "type": "function"
     }
   ],

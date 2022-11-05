@@ -1,79 +1,43 @@
-// // SPDX-License-Identifier: MIT
-// pragma solidity ^0.8.4;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.9;
 
-// import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-// import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-// import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-// import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-// import "./interfaces/ISoulFundFactory.sol";
-// import "./SoulFund.sol";
+import "./interfaces/ISoulFundFactory.sol";
+import "./SoulFund.sol";
 
-// contract SoulFundFactory is
-//     ISoulFundFactory,
-//     Initializable,
-//     PausableUpgradeable,
-//     AccessControlUpgradeable
-// {
-//     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
+contract SoulFundFactory is ISoulFundFactory {
+    address s_gasReceiver;
+    address s_gateway;
 
-//     using CountersUpgradeable for CountersUpgradeable.Counter;
+    address s_data;
 
-//     CountersUpgradeable.Counter private _fundCounter;
+    constructor(
+        address _data,
+        address _gateway,
+        address _gasReceiver
+    ) {
+        s_data = _data;
+        s_gasReceiver = _gasReceiver;
+        s_gateway = _gateway;
+    }
 
-//     IAxelarGasService public immutable gasReceiver;
-//     IAxelarGateway immutable _gateway;
+    function deployNewSoulFund(uint256 _vestingDate) external {
+        require(
+            _vestingDate > block.timestamp,
+            "SoulFundFactory.deployNewSoulFund: vesting must be sometime in the future"
+        );
 
-//     address dataAddress;
-    
-//     //fundId => fundAddress
-//     mapping(uint256 => address) public funds;
+        SoulFund soulFund = new SoulFund(
+            msg.sender,
+            _vestingDate,
+            s_data,
+            s_gateway,
+            s_gasReceiver
+        );
 
-
-
-//     constructor(address _data, address gateway_, address gasReceiver_) {
-        
-//         dataAddress = _data;
-//         gasReceiver = IAxelarGasService(gasReceiver_);
-//         _gateway = IAxelarGateway(gateway_);
-//     }
-
-//     function pause() public onlyRole(PAUSER_ROLE) {
-//         _pause();
-//     }
-
-//     function unpause() public onlyRole(PAUSER_ROLE) {
-//         _unpause();
-//     }
-
-//     function deployNewSoulFund(address _beneficiary, uint256 _vestingDate)
-//         external
-//         payable
-//         override
-//     {
-//         require(
-//             _beneficiary != address(0),
-//             "SoulFundFactory.deployNewSoulFund: must have at least one beneficiary"
-//         );
-//         require(
-//             _vestingDate > block.timestamp,
-//             "SoulFundFactory.deployNewSoulFund: vesting must be sometime in the future"
-//         );
-//         require(
-//             msg.value > 0,
-//             "SoulFundFactory.deployNewSoulFund: no funds deposited"
-//         );
-
-//         _fundCounter.increment();
-
-//         SoulFund soulFund = new SoulFund{value: msg.value}();
-//         soulFund.initialize(_beneficiary, _vestingDate, dataAddress);
-//         funds[_fundCounter.current()] = address(soulFund);
-
-//         emit NewSoulFundTokenDeployed(
-//             address(this),
-//             _beneficiary,
-//             _vestingDate,
-//             msg.value
-//         );
-//     }
-// }
+        emit NewSoulFundTokenDeployed(
+            address(soulFund),
+            msg.sender,
+            _vestingDate
+        );
+    }
+}
