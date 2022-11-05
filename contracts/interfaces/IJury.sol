@@ -18,6 +18,9 @@ interface IJury {
     struct DisputeProposal {
         address[] approvedJurors;
         bool isApproved;
+        uint256 deadline;
+        address plaintiff;
+        address defendent;
     }
 
     struct Dispute {
@@ -48,19 +51,19 @@ interface IJury {
      */
     function setJuryType() external;
 
-    function addJuryPoolMember() external;
+    // function addJuryPoolMember() external;
 
-    function removeJuryPoolMember() external;
+    // function removeJuryPoolMember() external;
 
     /**
      * @dev lock up jury members to specific jury id
-     */
-    function newLiveJury() external;
+    //  */
+    // function newLiveJury() external;
 
-    /** MICRO (ongoing dispute) **/
-    function newDispute() external;
+    // /** MICRO (ongoing dispute) **/
+    // function newDispute() external;
 
-    function voteYes() external;
+    // function voteYes() external;
 
-    function voteNo() external;
+    // function voteNo() external;
 }
