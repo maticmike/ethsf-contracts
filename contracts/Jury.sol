@@ -58,35 +58,41 @@ contract Jury is IJury, Pausable {
     }
 
     // /*** FUNCTIONS ***/
-    // function newDisputeProposal(
-    //     address _plaintiff,
-    //     address _defendent,
-    //     uint256 _deadline
-    // ) external {
-    //     Jury liveJury = juries[juryPointer];
+    function newDisputeProposal(
+        address _plaintiff,
+        address _defendent,
+        uint256 _deadline
+    ) external {
+        JuryMember[] memory juryMembers = juries[juryPointer];
 
-    //     for (uint256 i = 0; i < liveJury.juryMembers.length; i++) {
-    //         require(
-    //             liveJury.juryMembers[i].juryMember != plaintiff ||
-    //                 liveJury.juryMembers[i].juryMember != _defendent,
-    //             "Jury.newDispute: live jury member cannot be involved"
-    //         );
-    //     }
+        for (uint256 i = 0; i < juryMembers.length; i++) {
+            require(
+                juryMembers[i].memberAddr != _plaintiff ||
+                    juryMembers[i].memberAddr != _defendent,
+                "Jury.newDispute: live jury member cannot be involved"
+            );
+        }
 
-    //     disputeProposals[disputeProposalId] = DisputeProposal({approvedJurors: [], isApproved: false});
-    // }
+        disputeProposals[disputeProposalId] = DisputeProposal({
+            approvedJurors: new address[](0),
+            isApproved: false,
+            deadline: _deadline,
+            plaintiff: _plaintiff,
+            defendent: _defendent
+        });
+    }
 
-    // function approveDisputeProposal(uint256 _disputeProposalId)
-    //     external
-    //     onlyJuryPoolMember
-    // {
-    //     address[] memory currentApprovedJurors = disputeProposals[
-    //         _disputeProposalId
-    //     ].approvedJurors;
-    //     disputeProposals[_disputeProposalId]
-    //         .approvedJurors = currentApprovedJurors;
-    //     // if(disputeProposals[_disputeProposalId].approvedJurors > 1)
-    // }
+    function approveDisputeProposal(uint256 _disputeProposalId)
+        external
+        onlyJuryPoolMember
+    {
+        address[] memory currentApprovedJurors = disputeProposals[
+            _disputeProposalId
+        ].approvedJurors;
+        disputeProposals[_disputeProposalId]
+            .approvedJurors = currentApprovedJurors;
+        // if(disputeProposals[_disputeProposalId].approvedJurors > 1)
+    }
 
     function newDisputeSubmission(uint256 _disputeProposalId)
         external
