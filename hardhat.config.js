@@ -7,7 +7,6 @@ require("hardhat-contract-sizer");
 require("dotenv").config();
 
 const AURORA_PRIVATE_KEY = process.env.AURORA_PRIVATE_KEY;
-
 module.exports = {
   solidity: "0.8.9",
   settings: {
@@ -45,7 +44,13 @@ module.exports = {
       url: "https://polygon-mumbai.infura.io/v3/07f81ed71ca9494aaca81309bfc84bfd",
       accounts: [`0x${AURORA_PRIVATE_KEY}`],
       chainId: 80001,
-      gasPrice: 50 * 1000000000,
+      gasPrice: 20 * 1000000000,
+    },
+    goerli: {
+      url: "https://eth-goerli.g.alchemy.com/v2/MscQ8duAkSZs36a2TR8Xs9DTGYZSdcJy",
+      accounts: [`0x${AURORA_PRIVATE_KEY}`],
+      chainId: 5,
+      gasPrice: 20 * 1000000000,
     },
   },
 };

@@ -18,6 +18,9 @@ The SoulFund Jury contract is designed in a way which can be applied to any proj
 | Mumbai  | Jury Factory     | [0x0a2eF62347727B72dadfc2686ACF200127E504c5](https://mumbai.polygonscan.com/address/0x0a2eF62347727B72dadfc2686ACF200127E504c5#code) |
 | Mumbai  | SoulFund Factory | [0xC22ab064A007B2E7c13d8F9559Bce9F09008C6d0](https://mumbai.polygonscan.com/address/0xC22ab064A007B2E7c13d8F9559Bce9F09008C6d0#code) |
 
+Front-end repo: https://github.com/maticmike/ethsf-frontend
+Subgraph repo: https://github.com/maticmike/ethsf-graph
+
 to run unit tests on jury contract run
 
 ```shell
