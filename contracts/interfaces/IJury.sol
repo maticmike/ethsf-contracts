@@ -29,7 +29,7 @@ interface IJury {
     }
 
     //Jury Events
-    event NewLiveJury(uint256 juryId, uint256[] indexed juryMembers, uint256 expiration);
+    event NewLiveJury(uint256 juryId, uint256[] juryMembers, uint256 expiration);
     event NewJuryPoolMember(address indexed juryMember, uint256 indexed jurorId);
 
     // add and remove probably an afterthought right now for time sake

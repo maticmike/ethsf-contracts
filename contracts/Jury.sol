@@ -3,6 +3,7 @@ pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "./interfaces/IJury.sol";
+import "hardhat/console.sol";
 
 /**
  * @dev One jury per protocol

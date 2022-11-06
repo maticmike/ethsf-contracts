@@ -7,8 +7,9 @@ let jury;
 
 const jurySwap = BN("86400");
 const minJurySize = BN("3");
-
+const deadline = BN(Math.trunc(Date.now() / 1000 + 86400).toString());
 let jurors;
+let signers;
 
 describe("Jury", function () {
   beforeEach(async function () {
@@ -21,6 +22,8 @@ describe("Jury", function () {
       jurorFive.address,
       jurorSix.address,
     ];
+
+    signers = [jurorOne, jurorTwo, jurorThree, jurorFour, jurorFive, jurorSix];
 
     jury = await ethers.getContractFactory("Jury");
   });
@@ -49,5 +52,43 @@ describe("Jury", function () {
     it("should emit NewLiveJury", async function () {
       expect(await jury.deploy(jurors, jurySwap, minJurySize)).to.emit(jury, "NewLiveJury");
     });
+  });
+  describe("newDisputeProposal", function () {
+    let activeJuryMember;
+    beforeEach(async function () {
+      this.jury = await jury.deploy(jurors, jurySwap, minJurySize);
+      let juryDeployed = await this.jury.deployed();
+      let txReceipt = await juryDeployed.deployTransaction.wait();
+
+      let NewLiveJuryEvent = txReceipt.events?.filter((events) => events.event == "NewLiveJury");
+      activeJuryMember = signers[parseInt(NewLiveJuryEvent[0].args.juryMembers[0]) - 1];
+    });
+    it("should revert if called by an active jury member", async function () {
+      await expect(this.jury.connect(activeJuryMember).newDisputeProposal(jurySwap)).to.be.revertedWith(
+        "Jury.newDisputeProposal: juror already in jury"
+      );
+    });
+    it("should revert if deadline in past", async function () {
+      await expect(this.jury.connect(admin).newDisputeProposal(jurySwap)).to.be.revertedWith(
+        "Jury.newDisputeProposal: deadline has already past"
+      );
+    });
+    it("should emit NewDisputeProposal", async function () {
+      await expect(this.jury.connect(admin).newDisputeProposal(deadline))
+        .to.emit(this.jury, "NewDisputeProposal")
+        .withArgs(admin.address, 1, 0, deadline);
+    });
+  });
+  describe("approveDisputeProposal", function () {
+    beforeEach(async function () {});
+  });
+  describe("extendDisputeDeadline", function () {
+    beforeEach(async function () {});
+  });
+  describe("vote", function () {
+    beforeEach(async function () {});
+  });
+  describe("trigger vote finalized", function () {
+    beforeEach(async function () {});
   });
 });
