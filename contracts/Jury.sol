@@ -57,18 +57,18 @@ contract Jury is IJury, Pausable {
         juryIsLive[juryPointer] = true;
     }
 
-    // /*** FUNCTIONS ***/
+    /*** FUNCTIONS ***/
     function newDisputeProposal(
         address _plaintiff,
         address _defendent,
         uint256 _deadline
     ) external {
-        JuryMember[] memory juryMembers = juries[juryPointer];
+        JuryMember[] memory liveJuryMembers = juries[juryPointer];
 
-        for (uint256 i = 0; i < juryMembers.length; i++) {
+        for (uint256 i = 0; i < liveJuryMembers.length; i++) {
             require(
-                juryMembers[i].memberAddr != _plaintiff ||
-                    juryMembers[i].memberAddr != _defendent,
+                liveJuryMembers[i].memberAddr != _plaintiff ||
+                    liveJuryMembers[i].memberAddr != _defendent,
                 "Jury.newDispute: live jury member cannot be involved"
             );
         }
@@ -89,9 +89,26 @@ contract Jury is IJury, Pausable {
         address[] memory currentApprovedJurors = disputeProposals[
             _disputeProposalId
         ].approvedJurors;
-        disputeProposals[_disputeProposalId]
-            .approvedJurors = currentApprovedJurors;
-        // if(disputeProposals[_disputeProposalId].approvedJurors > 1)
+
+        for (uint256 i = 0; i < currentApprovedJurors.length; i++) {
+            require(
+                currentApprovedJurors[i] != msg.sender,
+                "Jury.approveDisputeProposal: jurror already approved"
+            );
+        }
+
+        //set new current approved jurors
+        disputeProposals[_disputeProposalId].approvedJurors.push(msg.sender);
+        DisputeProposal memory disputeProposal = disputeProposals[
+            _disputeProposalId
+        ];
+        if (disputeProposals[_disputeProposalId].approvedJurors.length > 1) {
+            _newDispute(
+                disputeProposal.plaintiff,
+                disputeProposal.defendent,
+                disputeProposal.deadline
+            );
+        }
     }
 
     function newDisputeSubmission(uint256 _disputeProposalId)
@@ -137,9 +154,6 @@ contract Jury is IJury, Pausable {
         JuryMember[] memory juryMembers = juries[juryPointer];
         for (uint256 i = 0; i < _juryMembers.length; i++) {
             juryMembers[i].memberAddr = _juryMembers[i];
-            juryMembers[i].jurysParticipated = juryMembers[i].jurysParticipated;
-            juryMembers[i].disputesApproved = juryMembers[i].disputesApproved;
-            juryMembers[i].disputesResolved = juryMembers[i].disputesResolved;
             juryMembers[i].vote = false;
         }
         emit JuryDutyCompleted(juryPointer);

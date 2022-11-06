@@ -2,11 +2,6 @@
 pragma solidity ^0.8.7;
 
 interface IJury {
-    // struct Jury {
-    //     uint256 juryId;
-    //     JuryMember[] juryMembers;
-    // }
-
     struct JuryMember {
         address memberAddr;
         uint256 jurysParticipated;
