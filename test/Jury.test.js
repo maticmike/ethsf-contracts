@@ -80,15 +80,91 @@ describe("Jury", function () {
     });
   });
   describe("approveDisputeProposal", function () {
-    beforeEach(async function () {});
+    let activeJuryMember;
+    beforeEach(async function () {
+      this.jury = await jury.deploy(jurors, jurySwap, minJurySize);
+      let juryDeployed = await this.jury.deployed();
+      let txReceipt = await juryDeployed.deployTransaction.wait();
+
+      let NewLiveJuryEvent = txReceipt.events?.filter((events) => events.event == "NewLiveJury");
+      activeJuryMember = signers[parseInt(NewLiveJuryEvent[0].args.juryMembers[0]) - 1];
+
+      await this.jury.connect(admin).newDisputeProposal(deadline);
+    });
+    it("should revert if already approved", async function () {
+      await this.jury.connect(activeJuryMember).approveDisputeProposal(0);
+      await expect(this.jury.connect(activeJuryMember).approveDisputeProposal(0)).to.be.revertedWith(
+        "Jury.approveDisputeProposal: already approved"
+      );
+    });
+    it("should revert if proposer approves", async function () {
+      await this.jury.connect(activeJuryMember).addJuryPoolMember(admin.address);
+      await expect(this.jury.connect(admin).approveDisputeProposal(0)).to.be.revertedWith(
+        "Jury.approvedDisputeProposal: proposer can not approve dispute"
+      );
+    });
+    it("should emit NewDispute", async function () {
+      await expect(this.jury.connect(activeJuryMember).approveDisputeProposal(0))
+        .to.emit(this.jury, "NewDispute")
+        .withArgs(0, 1, deadline);
+    });
   });
-  describe("extendDisputeDeadline", function () {
-    beforeEach(async function () {});
-  });
+  //   describe("extendDisputeDeadline", function () {
+  //     beforeEach(async function () {});
+  //   });
   describe("vote", function () {
-    beforeEach(async function () {});
+    let activeJuryMember;
+    let jurorId;
+    beforeEach(async function () {
+      this.jury = await jury.deploy(jurors, jurySwap, minJurySize);
+      let juryDeployed = await this.jury.deployed();
+      let txReceipt = await juryDeployed.deployTransaction.wait();
+
+      let NewLiveJuryEvent = txReceipt.events?.filter((events) => events.event == "NewLiveJury");
+      jurorId = parseInt(NewLiveJuryEvent[0].args.juryMembers[0]);
+      activeJuryMember = signers[jurorId - 1];
+      await this.jury.connect(admin).newDisputeProposal(deadline);
+      await this.jury.connect(activeJuryMember).approveDisputeProposal(0);
+    });
+    it("should revert if already resolved", async function () {
+      await this.jury.forceClose(0);
+      await expect(this.jury.connect(activeJuryMember).vote(0, true)).to.be.revertedWith(
+        "Jury.vote: dispute already resolved"
+      );
+    });
+    it("should revert if not in jury", async function () {
+      await expect(this.jury.connect(admin).vote(0, true)).to.be.revertedWith("Jury.vote: member not in jury");
+    });
+    it("should emit Voted event", async function () {
+      await expect(this.jury.connect(activeJuryMember).vote(0, true))
+        .to.emit(this.jury, "Voted")
+        .withArgs(jurorId, 0, true);
+    });
   });
   describe("trigger vote finalized", function () {
-    beforeEach(async function () {});
+    beforeEach(async function () {
+      this.jury = await jury.deploy(jurors, jurySwap, minJurySize);
+      let juryDeployed = await this.jury.deployed();
+      let txReceipt = await juryDeployed.deployTransaction.wait();
+
+      let NewLiveJuryEvent = txReceipt.events?.filter((events) => events.event == "NewLiveJury");
+      jurorIds = [
+        parseInt(NewLiveJuryEvent[0].args.juryMembers[0]),
+        parseInt(NewLiveJuryEvent[0].args.juryMembers[1]),
+        parseInt(NewLiveJuryEvent[0].args.juryMembers[2]),
+      ];
+      activeJuryMember = [signers[jurorIds[0] - 1], signers[jurorIds[1] - 1], signers[jurorIds[2] - 1]];
+      await this.jury.connect(admin).newDisputeProposal(deadline);
+      await this.jury.connect(activeJuryMember[0]).approveDisputeProposal(0);
+    });
+    it("should emitDisputeResolved with false verdict", async function () {
+      await expect(this.jury.forceClose(0)).to.emit(this.jury, "DisputeResolved").withArgs(0, false);
+    });
+    it("should emitDisputeResolved with true verdict", async function () {
+      await this.jury.connect(activeJuryMember[0]).vote(0, true);
+      await this.jury.connect(activeJuryMember[1]).vote(0, true);
+      await this.jury.connect(activeJuryMember[2]).vote(0, false);
+      await expect(this.jury.forceClose(0)).to.emit(this.jury, "DisputeResolved").withArgs(0, true);
+    });
   });
 });

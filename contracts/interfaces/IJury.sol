@@ -59,5 +59,5 @@ interface IJury {
 
     function vote(uint256 _disputeId, bool _vote) external;
 
-    // function addJuryPoolMember(address _newMember) external;
+    function addJuryPoolMember(address _newMember) external;
 }

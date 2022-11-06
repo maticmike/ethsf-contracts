@@ -134,15 +134,22 @@ contract Jury is IJury, Pausable {
 
     // removing for now, adding to jury would make the jury even. Would need to wait until 2 pending or 1 removed
 
-    // function addJuryPoolMember(address _newMember) external onlyJuryPoolMember {
-    //     require(juryPoolMembers[_newMember] == 0, "Jury.addJuryPoolMember: Juror already exists");
-    //     s_jurorLength++;
-    //     uint256 index = s_jurorLength;
-    //     juryPoolMembers[_newMember] = index;
-    //     juryPool[index].valid = true;
+    function addJuryPoolMember(address _newMember) external onlyJuryPoolMember {
+        require(juryPoolMembers[_newMember] == 0, "Jury.addJuryPoolMember: Juror already exists");
+        s_jurorLength++;
+        uint256 index = s_jurorLength;
+        juryPoolMembers[_newMember] = index;
+        juryPool[index].valid = true;
 
-    //     emit NewJuryPoolMember(_newMember, index);
-    // }
+        emit NewJuryPoolMember(_newMember, index);
+    }
+
+    // should be modified in production to restrict to deadline having passed
+    function forceClose(uint256 _disputeId) external {
+        // require timestamp has passed in production
+
+        _finalizeVerdict(_disputeId, disputes[_disputeId].juryId);
+    }
 
     /*** HELPER FUNCTIONS ***/
     function _newDispute(uint256 _deadline) internal {
