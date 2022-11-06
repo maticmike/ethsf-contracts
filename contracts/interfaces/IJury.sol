@@ -2,7 +2,7 @@
 pragma solidity ^0.8.7;
 
 interface IJury {
-    struct Votes {
+    struct Vote {
         bool decision;
         bool voted;
     }

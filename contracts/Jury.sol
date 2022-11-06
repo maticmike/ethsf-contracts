@@ -26,7 +26,7 @@ contract Jury is IJury, Pausable {
     mapping(uint256 => JuryMember[]) public juries;
     mapping(uint256 => bool) public juryIsLive;
 
-    mapping(uint256 => mapping(address => Votes)) juryMemberVote;
+    mapping(uint256 => mapping(address => Vote)) juryMemberVote;
 
     /** MODIFIER **/
     modifier onlyJuryMember() {
@@ -84,6 +84,17 @@ contract Jury is IJury, Pausable {
         });
     }
 
+    function _isInJury(uint256 juryId) internal view returns (bool) {
+        JuryMember[] memory jury = juries[juryId];
+
+        for (uint256 i = 0; i < jury.length; i++) {
+            if (msg.sender == jury[i].memberAddr) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     function approveDisputeProposal(uint256 _disputeProposalId)
         external
         onlyJuryPoolMember
@@ -123,7 +134,15 @@ contract Jury is IJury, Pausable {
     function voteYes(uint256 _disputeId) external onlyJuryMember {
         Dispute dispute = disputes[_disputeId];
 
-        //require(dispute.juryMembers[]);
+        // require sender is in jury assigned to dispute id
+        require(_isInJury(dispute.juryId), "Jury.voteYes: member not in jury");
+        // require dispute hasn't already resolved
+
+        juryMemberVote[_disputeId][msg.sender] = Vote({
+            decision: true,
+            voted: true
+        });
+
         dispute.juryMemberVote[msg.sender] = true;
         dispute.juryMemberVoteCounter[msg.sender] += 1;
         emit VotedYes(msg.sender, _disputeId);
