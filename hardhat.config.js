@@ -6,7 +6,7 @@ require("hardhat-contract-sizer");
 /** @type import('hardhat/config').HardhatUserConfig */
 require("dotenv").config();
 
-const AURORA_PRIVATE_KEY = process.env.PRIVATE_KEY;
+const AURORA_PRIVATE_KEY = process.env.AURORA_PRIVATE_KEY;
 
 module.exports = {
   solidity: "0.8.9",

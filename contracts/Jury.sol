@@ -8,200 +8,189 @@ import "./interfaces/IJury.sol";
  * @dev One jury per protocol
  */
 contract Jury is IJury, Pausable {
-    uint256 constant minJurySize = 10;
     uint256 constant increaseDeadlineAmount = 86400;
+    uint256 s_jurySwap;
+    uint256 s_minJurySize;
+    uint256 s_jurorLength;
 
-    uint256 juryPointer;
+    uint256 juryId;
     uint256 disputeId;
     uint256 disputeProposalId;
-
-    /** STORAGE **/
-    bool verdict;
 
     /** DATA STRUCTURES **/
     mapping(uint256 => Dispute) public disputes;
     mapping(uint256 => DisputeProposal) public disputeProposals;
 
-    mapping(address => bool) public juryPoolMembers;
-    mapping(uint256 => JuryMember[]) public juries;
-    mapping(uint256 => bool) public juryIsLive;
+    mapping(uint256 => JuryMember) juryPool;
 
-    mapping(uint256 => mapping(address => Vote)) juryMemberVote;
+    // indicies
+    mapping(address => uint256) public juryPoolMembers;
+
+    // juryId to juryIndicies
+    mapping(uint256 => uint256[]) public juries;
+    // juryId to expiration
+    mapping(uint256 => uint256) public juryExpiration;
+
+    mapping(uint256 => mapping(uint256 => Vote)) juryMemberVote;
 
     /** MODIFIER **/
-    modifier onlyJuryMember() {
-        JuryMember[] memory liveJuryMembers = juries[juryPointer];
-        for (uint256 i = 0; i < liveJuryMembers.length; i++) {
-            require(
-                msg.sender == liveJuryMembers[i].memberAddr,
-                "caller must be jury member"
-            );
-        }
-        _;
-    }
-
     modifier onlyJuryPoolMember() {
-        require(juryPoolMembers[msg.sender], "caller must be jury pool member");
+        require(juryPoolMembers[msg.sender] > 0, "caller must be jury pool member");
         _;
     }
 
-    /*** CONSTRUCTOR ***/
-    constructor(address[] memory _initialJuryMembers) {
-        require(
-            _initialJuryMembers.length == minJurySize,
-            "Jury.constructor: not enough jury members"
-        );
-        for (uint256 i = 0; i < _initialJuryMembers.length; i++) {
-            juryPoolMembers[_initialJuryMembers[i]] = true;
-            emit NewJuryPoolMember(_initialJuryMembers[i]);
-        }
-        juryPointer += 1;
-        juryIsLive[juryPointer] = true;
-    }
-
-    /*** FUNCTIONS ***/
-    function newDisputeProposal(
-        address _plaintiff,
-        address _defendent,
-        uint256 _deadline
-    ) external {
-        JuryMember[] memory liveJuryMembers = juries[juryPointer];
-
-        for (uint256 i = 0; i < liveJuryMembers.length; i++) {
-            require(
-                liveJuryMembers[i].memberAddr != _plaintiff ||
-                    liveJuryMembers[i].memberAddr != _defendent,
-                "Jury.newDispute: live jury member cannot be involved"
-            );
-        }
-
-        disputeProposals[disputeProposalId] = DisputeProposal({
-            approvedJurors: new address[](0),
-            isApproved: false,
-            deadline: _deadline,
-            plaintiff: _plaintiff,
-            defendent: _defendent
-        });
-    }
-
-    function _isInJury(uint256 juryId) internal view returns (bool) {
-        JuryMember[] memory jury = juries[juryId];
-
-        for (uint256 i = 0; i < jury.length; i++) {
-            if (msg.sender == jury[i].memberAddr) {
-                return true;
-            }
+    function _isInJury(uint256 _juryId) internal view returns (bool) {
+        JuryMember memory juror = juryPool[juryPoolMembers[msg.sender]];
+        if (juror.lastJuryId == _juryId) {
+            return true;
         }
         return false;
     }
 
-    function approveDisputeProposal(uint256 _disputeProposalId)
-        external
-        onlyJuryPoolMember
-    {
-        address[] memory currentApprovedJurors = disputeProposals[
-            _disputeProposalId
-        ].approvedJurors;
-
-        for (uint256 i = 0; i < currentApprovedJurors.length; i++) {
-            require(
-                currentApprovedJurors[i] != msg.sender,
-                "Jury.approveDisputeProposal: jurror already approved"
-            );
+    /*** CONSTRUCTOR ***/
+    constructor(
+        address[] memory _initialJuryMembers,
+        uint96 _jurySwap,
+        uint8 _minJurySize
+    ) {
+        require(_minJurySize > 1, "Jury.constructor: jury size at least 3");
+        require(_minJurySize % 2 > 0, "Jury.constructor: jury size must be odd");
+        require(_initialJuryMembers.length >= _minJurySize * 2, "Jury.constructor: not enough jury members");
+        for (uint256 i = 0; i < _initialJuryMembers.length; i++) {
+            require(juryPoolMembers[_initialJuryMembers[i]] == 0, "Jury.constructor: duplicate Jury member");
+            juryPoolMembers[_initialJuryMembers[i]] = i + 1;
+            juryPool[i + 1].valid = true;
+            emit NewJuryPoolMember(_initialJuryMembers[i]);
         }
+        juryId = 1;
+        s_jurorLength = _initialJuryMembers.length;
+        s_minJurySize = _minJurySize;
+        s_jurySwap = _jurySwap;
+        _randomizeJuryMembers(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, juryId))));
+    }
+
+    /*** FUNCTIONS ***/
+    function newDisputeProposal(uint256 _deadline) external {
+        _checkJury();
+        require(!_isInJury(juryId), "Jury.newDisputeProposal: juror already in jury");
+        disputeProposals[disputeProposalId] = DisputeProposal({
+            proposer: msg.sender,
+            juryId: juryId,
+            isApproved: false,
+            deadline: _deadline
+        });
+    }
+
+    function approveDisputeProposal(uint256 _disputeProposalId) external onlyJuryPoolMember {
+        _checkJury();
+        DisputeProposal memory disputeProposal = disputeProposals[_disputeProposalId];
+        // approver is not proposer
+        require(
+            msg.sender != disputeProposal.proposer,
+            "Jury.approvedDisputeProposal: proposer can not approve dispute"
+        );
+        // change this to conditional
+        require(block.timestamp < disputeProposal.deadline, "Jury.approveDisputeProposal: deadline has passed");
+        require(!disputeProposal.isApproved, "Jury.approveDisputeProposal: already approved");
 
         //set new current approved jurors
-        disputeProposals[_disputeProposalId].approvedJurors.push(msg.sender);
-        DisputeProposal memory disputeProposal = disputeProposals[
-            _disputeProposalId
-        ];
-        if (disputeProposals[_disputeProposalId].approvedJurors.length > 1) {
-            _newDispute(
-                disputeProposal.plaintiff,
-                disputeProposal.defendent,
-                disputeProposal.deadline
-            );
-        }
+        disputeProposals[_disputeProposalId].isApproved = true;
+        juryPool[juryPoolMembers[msg.sender]].disputesApproved++;
+        _newDispute(disputeProposal.deadline);
     }
 
     function extendDisputeDeadline(uint256 _disputeId) external {
+        _checkJury();
         //require (half jurors to agree to extension)
-        uint256 newDeadline = disputes[_disputeId]
-            .deadline += increaseDeadlineAmount;
+        require(_isInJury(disputes[_disputeId].juryId), "Jury.extendDisputeDeadline: not in jury");
+        uint256 newDeadline = disputes[_disputeId].deadline += increaseDeadlineAmount;
         emit DisputeDeadlinePostponed(_disputeId, newDeadline);
     }
 
-    function voteYes(uint256 _disputeId) external onlyJuryMember {
-        Dispute dispute = disputes[_disputeId];
-
+    function vote(uint256 _disputeId, bool _vote) external {
+        Dispute memory dispute = disputes[_disputeId];
+        // require not resolved
+        require(!dispute.resolved, "Jury.vote: dispute already resolved");
         // require sender is in jury assigned to dispute id
-        require(_isInJury(dispute.juryId), "Jury.voteYes: member not in jury");
-        // require dispute hasn't already resolved
+        require(_isInJury(dispute.juryId), "Jury.vote: member not in jury");
 
-        juryMemberVote[_disputeId][msg.sender] = Vote({
-            decision: true,
-            voted: true
-        });
+        if (block.timestamp >= dispute.deadline) {
+            _finalizeVerdict(_disputeId, dispute.juryId);
+        } else {
+            juryMemberVote[_disputeId][juryPoolMembers[msg.sender]] = Vote({decision: _vote, voted: true});
 
-        dispute.juryMemberVote[msg.sender] = true;
-        dispute.juryMemberVoteCounter[msg.sender] += 1;
-        emit VotedYes(msg.sender, _disputeId);
+            emit Voted(msg.sender, _disputeId, _vote);
+        }
     }
 
-    function voteNo() external onlyJuryMember {
-        Dispute dispute = disputes[_disputeId];
-        require(dispute.juryMembers[]);
-        dispute.juryMemberVote[msg.sender] = false;
-        dispute.juryMemberVoteCounter[msg.sender] += 1;
-        emit VotedNo(msg.sender, _disputeId);
-    }
+    function addJuryPoolMember(address _newMember) external onlyJuryPoolMember {
+        require(juryPoolMembers[_newMember] == 0, "Jury.addJuryPoolMember: Juror already exists");
+        s_jurorLength++;
+        uint256 index = s_jurorLength;
+        juryPoolMembers[_newMember] = index;
+        juryPool[index].valid = true;
 
-    function setJuryType() external {}
-
-    function addJuryPoolMember(address _newMember) external onlyJuryMember {
-        juryPoolMembers[_newMember] = true;
         emit NewJuryPoolMember(_newMember);
     }
 
-    /**
-     * @dev lock up jury members to specific jury id
-     */
-    function newLiveJury(address[] memory _juryMembers) external {
-        // require juryMember be from pooled members
-        juryPointer += 1;
-        juryIsLive[juryPointer] = true;
-        juryIsLive[juryPointer - 1] = false;
-        JuryMember[] memory juryMembers = juries[juryPointer];
-        for (uint256 i = 0; i < _juryMembers.length; i++) {
-            juryMembers[i].memberAddr = _juryMembers[i];
-        }
-        emit JuryDutyCompleted(juryPointer);
-    }
-
     /*** HELPER FUNCTIONS ***/
-    function _newDispute(
-        address _plaintiff,
-        address _defendent,
-        uint256 _deadline
-    ) internal {
-        JuryMember[] memory liveJuryMembers = juries[juryPointer];
-
-        disputeId += 1;
-        disputes[disputeId] = Dispute({
-            juryId: juryPointer,
-            disputeId: disputeId,
-            deadline: _deadline,
-            plaintiff: _plaintiff,
-            defendent: _defendent,
-            verdict: false,
-            juryMembers: liveJuryMembers
-        });
-        emit NewDispute(disputeId, juryPointer);
+    function _newDispute(uint256 _deadline) internal {
+        uint256 id = disputeId;
+        disputeId++;
+        disputes[id] = Dispute({juryId: juryId, deadline: _deadline, verdict: false, resolved: false});
+        emit NewDispute(id, juryId);
     }
 
-    function _setVerdict() internal {}
+    function _finalizeVerdict(uint256 _disputeId, uint256 _juryId) internal {
+        uint256[] memory jury = juries[_juryId];
+        uint8 votesFor;
 
-    function _randomizeJuryMembers() internal {}
+        for (uint8 i = 0; i < jury.length; i++) {
+            Vote memory votes = juryMemberVote[_disputeId][jury[i]];
+            if (votes.voted) {
+                if (votes.decision) {
+                    votesFor++;
+                }
+                juryPool[jury[i]].disputesResolved++;
+            }
+        }
+
+        if (s_minJurySize / 2 < votesFor) {
+            disputes[_disputeId].verdict = true;
+        }
+
+        disputes[_disputeId].resolved = true;
+    }
+
+    function _checkJury() internal {
+        uint256 id = juryId;
+        if (block.timestamp >= juryExpiration[id]) {
+            emit JuryDutyCompleted(id);
+            juryId++;
+            _randomizeJuryMembers(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, id + 1))));
+        }
+    }
+
+    // seed is being set by psuedo randomness however VRF should be integrated
+    function _randomizeJuryMembers(uint256 _seed) internal {
+        uint256 nonce = 0;
+        uint256 length = s_jurorLength;
+
+        for (uint256 i = 0; i < s_minJurySize; ) {
+            uint256 juror = (uint256(keccak256(abi.encodePacked(_seed, nonce))) % length) + 1;
+
+            // can't be selected twice in a row
+            if (juryPool[juror].valid && (juryPool[juror].lastJuryId == 0 || juryPool[juror].lastJuryId + 1 < juryId)) {
+                juryPool[juror].lastJuryId = juryId;
+                juries[juryId].push(juror);
+                i++;
+            }
+
+            nonce++;
+        }
+
+        juryExpiration[juryId] = block.timestamp + s_jurySwap;
+    }
 }
 
 // add metadata about the dispute to ipfs

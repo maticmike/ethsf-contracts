@@ -8,36 +8,33 @@ interface IJury {
     }
 
     struct JuryMember {
-        address memberAddr;
-        uint256 jurysParticipated;
+        bool valid;
+        uint256 lastJuryId;
         uint256 disputesApproved;
         uint256 disputesResolved;
     }
 
     struct DisputeProposal {
-        address[] approvedJurors;
+        address proposer;
+        uint256 juryId;
         bool isApproved;
         uint256 deadline;
-        address plaintiff;
-        address defendent;
     }
 
     struct Dispute {
         uint256 juryId;
-        uint256 disputeId;
         uint256 deadline;
-        address plaintiff;
-        address defendent;
         bool verdict;
+        bool resolved;
     }
 
     //Jury Events
-    event NewLiveJury(uint256 juryId, address[] indexed juryMemebers);
+    event NewLiveJury(uint256 juryId, address[] indexed juryMembers);
     event NewJuryPoolMember(address juryMemeber);
     event RemovedJuryMember(address juryMember);
+    event JuryDutyAdded(uint256 indexed juryId, address[] indexed juryMembers);
     event JuryDutyCompleted(uint256 indexed jurydId);
-    event VotedYes(address indexed juryMember, uint256 disputeId);
-    event VotedNo(address indexed juryMember, uint256 disputeId);
+    event Voted(address indexed juryMember, uint256 indexed disputeId, bool decision);
 
     //Dispute Events
     event NewDispute(uint256 juryId, uint256 disputeId);
@@ -50,7 +47,7 @@ interface IJury {
     /**
      * @dev majority rules or unanimous decision
      */
-    function setJuryType() external;
+    // function setJuryType() external;
 
     // function addJuryPoolMember() external;
 

@@ -47,6 +47,25 @@
         {
           "indexed": true,
           "internalType": "uint256",
+          "name": "juryId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "address[]",
+          "name": "juryMembers",
+          "type": "address[]"
+        }
+      ],
+      "name": "JuryDutyAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
           "name": "jurydId",
           "type": "uint256"
         }
@@ -117,7 +136,7 @@
         {
           "indexed": true,
           "internalType": "address[]",
-          "name": "juryMemebers",
+          "name": "juryMembers",
           "type": "address[]"
         }
       ],
@@ -138,11 +157,29 @@
       "type": "event"
     },
     {
-      "inputs": [],
-      "name": "setJuryType",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "juryMember",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "disputeId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "decision",
+          "type": "bool"
+        }
+      ],
+      "name": "Voted",
+      "type": "event"
     }
   ],
   "bytecode": "0x",
