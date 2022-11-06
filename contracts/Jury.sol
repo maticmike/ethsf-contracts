@@ -13,7 +13,7 @@ contract Jury is IJury, Pausable {
     uint256 s_minJurySize;
     uint256 s_jurorLength;
 
-    uint256 juryId;
+    uint256 s_juryId;
     uint256 disputeId;
     uint256 disputeProposalId;
 
@@ -60,38 +60,45 @@ contract Jury is IJury, Pausable {
             require(juryPoolMembers[_initialJuryMembers[i]] == 0, "Jury.constructor: duplicate Jury member");
             juryPoolMembers[_initialJuryMembers[i]] = i + 1;
             juryPool[i + 1].valid = true;
-            emit NewJuryPoolMember(_initialJuryMembers[i]);
+            emit NewJuryPoolMember(_initialJuryMembers[i], i + 1);
         }
-        juryId = 1;
+        s_juryId = 1;
         s_jurorLength = _initialJuryMembers.length;
         s_minJurySize = _minJurySize;
         s_jurySwap = _jurySwap;
-        _randomizeJuryMembers(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, juryId))));
+
+        _randomizeJuryMembers(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, uint256(1)))));
     }
 
     /*** FUNCTIONS ***/
     function newDisputeProposal(uint256 _deadline) external {
         _checkJury();
-        require(!_isInJury(juryId), "Jury.newDisputeProposal: juror already in jury");
-        disputeProposals[disputeProposalId] = DisputeProposal({
+        uint256 jid = s_juryId;
+        require(!_isInJury(jid), "Jury.newDisputeProposal: juror already in jury");
+        require(_deadline > block.timestamp, "Jury.newDisputeProposal: deadline has already past");
+        uint256 id = disputeProposalId;
+        disputeProposalId++;
+        disputeProposals[id] = DisputeProposal({
             proposer: msg.sender,
-            juryId: juryId,
+            juryId: jid,
             isApproved: false,
             deadline: _deadline
         });
+
+        emit NewDisputeProposal(msg.sender, jid, id, _deadline);
     }
 
     function approveDisputeProposal(uint256 _disputeProposalId) external onlyJuryPoolMember {
         _checkJury();
         DisputeProposal memory disputeProposal = disputeProposals[_disputeProposalId];
         // approver is not proposer
+        require(!disputeProposal.isApproved, "Jury.approveDisputeProposal: already approved");
         require(
             msg.sender != disputeProposal.proposer,
             "Jury.approvedDisputeProposal: proposer can not approve dispute"
         );
         // change this to conditional
-        require(block.timestamp < disputeProposal.deadline, "Jury.approveDisputeProposal: deadline has passed");
-        require(!disputeProposal.isApproved, "Jury.approveDisputeProposal: already approved");
+        require(block.timestamp < disputeProposal.deadline, "Jury.approveDisputeProposal: deadline has past");
 
         //set new current approved jurors
         disputeProposals[_disputeProposalId].isApproved = true;
@@ -114,31 +121,35 @@ contract Jury is IJury, Pausable {
         // require sender is in jury assigned to dispute id
         require(_isInJury(dispute.juryId), "Jury.vote: member not in jury");
 
+        uint256 juror = juryPoolMembers[msg.sender];
         if (block.timestamp >= dispute.deadline) {
             _finalizeVerdict(_disputeId, dispute.juryId);
         } else {
-            juryMemberVote[_disputeId][juryPoolMembers[msg.sender]] = Vote({decision: _vote, voted: true});
+            juryMemberVote[_disputeId][juror] = Vote({decision: _vote, voted: true});
 
-            emit Voted(msg.sender, _disputeId, _vote);
+            emit Voted(juror, _disputeId, _vote);
         }
     }
 
-    function addJuryPoolMember(address _newMember) external onlyJuryPoolMember {
-        require(juryPoolMembers[_newMember] == 0, "Jury.addJuryPoolMember: Juror already exists");
-        s_jurorLength++;
-        uint256 index = s_jurorLength;
-        juryPoolMembers[_newMember] = index;
-        juryPool[index].valid = true;
+    // removing for now, adding to jury would make the jury even. Would need to wait until 2 pending or 1 removed
 
-        emit NewJuryPoolMember(_newMember);
-    }
+    // function addJuryPoolMember(address _newMember) external onlyJuryPoolMember {
+    //     require(juryPoolMembers[_newMember] == 0, "Jury.addJuryPoolMember: Juror already exists");
+    //     s_jurorLength++;
+    //     uint256 index = s_jurorLength;
+    //     juryPoolMembers[_newMember] = index;
+    //     juryPool[index].valid = true;
+
+    //     emit NewJuryPoolMember(_newMember, index);
+    // }
 
     /*** HELPER FUNCTIONS ***/
     function _newDispute(uint256 _deadline) internal {
         uint256 id = disputeId;
+        uint256 jid = s_juryId;
         disputeId++;
-        disputes[id] = Dispute({juryId: juryId, deadline: _deadline, verdict: false, resolved: false});
-        emit NewDispute(id, juryId);
+        disputes[id] = Dispute({juryId: jid, deadline: _deadline, verdict: false, resolved: false});
+        emit NewDispute(id, jid, _deadline);
     }
 
     function _finalizeVerdict(uint256 _disputeId, uint256 _juryId) internal {
@@ -160,13 +171,15 @@ contract Jury is IJury, Pausable {
         }
 
         disputes[_disputeId].resolved = true;
+
+        emit DisputeResolved(_disputeId, disputes[_disputeId].verdict);
     }
 
     function _checkJury() internal {
-        uint256 id = juryId;
+        uint256 id = s_juryId;
         if (block.timestamp >= juryExpiration[id]) {
             emit JuryDutyCompleted(id);
-            juryId++;
+            s_juryId++;
             _randomizeJuryMembers(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty, id + 1))));
         }
     }
@@ -175,21 +188,24 @@ contract Jury is IJury, Pausable {
     function _randomizeJuryMembers(uint256 _seed) internal {
         uint256 nonce = 0;
         uint256 length = s_jurorLength;
+        uint256 id = s_juryId;
 
         for (uint256 i = 0; i < s_minJurySize; ) {
             uint256 juror = (uint256(keccak256(abi.encodePacked(_seed, nonce))) % length) + 1;
-
+            JuryMember memory selected = juryPool[juror];
             // can't be selected twice in a row
-            if (juryPool[juror].valid && (juryPool[juror].lastJuryId == 0 || juryPool[juror].lastJuryId + 1 < juryId)) {
-                juryPool[juror].lastJuryId = juryId;
-                juries[juryId].push(juror);
+            if (selected.valid && (selected.lastJuryId == 0 || selected.lastJuryId + 1 < id)) {
+                juryPool[juror].lastJuryId = id;
+                juries[id].push(juror);
                 i++;
             }
 
             nonce++;
         }
 
-        juryExpiration[juryId] = block.timestamp + s_jurySwap;
+        uint256 expires = block.timestamp + s_jurySwap;
+        juryExpiration[id] = expires;
+        emit NewLiveJury(id, juries[id], expires);
     }
 }
 

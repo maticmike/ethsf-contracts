@@ -7,9 +7,9 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
+          "indexed": true,
           "internalType": "uint256",
-          "name": "juryId",
+          "name": "disputeId",
           "type": "uint256"
         },
         {
@@ -26,16 +26,16 @@
       "anonymous": false,
       "inputs": [
         {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "disputeId",
+          "type": "uint256"
+        },
+        {
           "indexed": false,
           "internalType": "bool",
           "name": "verdict",
           "type": "bool"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "juryId",
-          "type": "uint256"
         }
       ],
       "name": "DisputeResolved",
@@ -52,9 +52,9 @@
         },
         {
           "indexed": true,
-          "internalType": "address[]",
+          "internalType": "uint256[]",
           "name": "juryMembers",
-          "type": "address[]"
+          "type": "uint256[]"
         }
       ],
       "name": "JuryDutyAdded",
@@ -66,7 +66,7 @@
         {
           "indexed": true,
           "internalType": "uint256",
-          "name": "jurydId",
+          "name": "juryId",
           "type": "uint256"
         }
       ],
@@ -77,34 +77,21 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
-          "internalType": "bool",
-          "name": "vote",
-          "type": "bool"
-        },
-        {
           "indexed": true,
-          "internalType": "address",
-          "name": "juryMember",
-          "type": "address"
-        }
-      ],
-      "name": "JuryMemberVoted",
-      "type": "event"
-    },
-    {
-      "anonymous": false,
-      "inputs": [
-        {
-          "indexed": false,
           "internalType": "uint256",
           "name": "juryId",
           "type": "uint256"
         },
         {
-          "indexed": false,
+          "indexed": true,
           "internalType": "uint256",
           "name": "disputeId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "deadline",
           "type": "uint256"
         }
       ],
@@ -115,10 +102,47 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
+          "indexed": true,
           "internalType": "address",
-          "name": "juryMemeber",
+          "name": "proposer",
           "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "juryId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "proposedId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "deadline",
+          "type": "uint256"
+        }
+      ],
+      "name": "NewDisputeProposal",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "juryMember",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jurorId",
+          "type": "uint256"
         }
       ],
       "name": "NewJuryPoolMember",
@@ -135,9 +159,15 @@
         },
         {
           "indexed": true,
-          "internalType": "address[]",
+          "internalType": "uint256[]",
           "name": "juryMembers",
-          "type": "address[]"
+          "type": "uint256[]"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "expiration",
+          "type": "uint256"
         }
       ],
       "name": "NewLiveJury",
@@ -147,13 +177,19 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": false,
-          "internalType": "address",
-          "name": "juryMember",
-          "type": "address"
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "proposedId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "jurorId",
+          "type": "uint256"
         }
       ],
-      "name": "RemovedJuryMember",
+      "name": "ProposalPassed",
       "type": "event"
     },
     {
@@ -161,9 +197,9 @@
       "inputs": [
         {
           "indexed": true,
-          "internalType": "address",
-          "name": "juryMember",
-          "type": "address"
+          "internalType": "uint256",
+          "name": "jurorId",
+          "type": "uint256"
         },
         {
           "indexed": true,
@@ -180,6 +216,63 @@
       ],
       "name": "Voted",
       "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_disputeProposalId",
+          "type": "uint256"
+        }
+      ],
+      "name": "approveDisputeProposal",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_disputeId",
+          "type": "uint256"
+        }
+      ],
+      "name": "extendDisputeDeadline",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_deadline",
+          "type": "uint256"
+        }
+      ],
+      "name": "newDisputeProposal",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_disputeId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "_vote",
+          "type": "bool"
+        }
+      ],
+      "name": "vote",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     }
   ],
   "bytecode": "0x",
