@@ -1,0 +1,65 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "IJuryFactory",
+  "sourceName": "contracts/interfaces/IJuryFactory.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "juryContract",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint96",
+          "name": "swapInterval",
+          "type": "uint96"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "jurySize",
+          "type": "uint8"
+        }
+      ],
+      "name": "JuryDepoyed",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address[]",
+          "name": "_jurors",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint96",
+          "name": "_swapInterval",
+          "type": "uint96"
+        },
+        {
+          "internalType": "uint8",
+          "name": "_jurySize",
+          "type": "uint8"
+        }
+      ],
+      "name": "deployJury",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

@@ -6,6 +6,7 @@ const BN = (number) => ethers.BigNumber.from(number);
 let soulFundFactory;
 let soulFund;
 let tokenRenderer;
+let juryFactory;
 
 const futureVest = BN("1699142400");
 const pastDate = BN("1636070400");
@@ -28,27 +29,47 @@ const aggregators = [
 const gateway = "0xBF62ef1486468a6bd26Dd669C06db43dEd5B849B";
 const gasReceiver = "0xbE406F0189A0B4cf3A05C286473D23791Dd44Cc6";
 
+const jurySwap = BN("86400");
+const minJurySize = BN("3");
+const deadline = BN(Math.trunc(Date.now() / 1000 + 86400).toString());
+let jurors;
+
 describe("SoulFundFactory", function () {
   beforeEach(async function () {
-    [admin, granter, beneficiary] = await ethers.getSigners();
+    [admin, granter, beneficiary, jurorOne, jurorTwo, jurorThree, jurorFour, jurorFive, jurorSix] =
+      await ethers.getSigners();
+
+    jurors = [
+      jurorOne.address,
+      jurorTwo.address,
+      jurorThree.address,
+      jurorFour.address,
+      jurorFive.address,
+      jurorSix.address,
+    ];
+
+    signers = [jurorOne, jurorTwo, jurorThree, jurorFour, jurorFive, jurorSix];
 
     tokenRenderer = await ethers.getContractFactory("TokenRenderer");
     soulFund = await ethers.getContractFactory("SoulFund");
     soulFundFactory = await ethers.getContractFactory("SoulFundFactory");
+    juryFactory = await ethers.getContractFactory("JuryFactory");
 
     this.renderer = await upgrades.deployProxy(tokenRenderer, [erc20s, tokenNames, tokenColors, aggregators]);
     await this.renderer.deployed();
 
-    this.factory = await soulFundFactory.deploy(this.renderer.address, gateway, gasReceiver);
+    this.juryFactory = await juryFactory.deploy();
+
+    this.factory = await soulFundFactory.deploy(this.renderer.address, gateway, gasReceiver, this.juryFactory.address);
   });
   describe("deployNewSoulFund", function () {
     it("should revert if vesting date in past", async function () {
-      await expect(this.factory.deployNewSoulFund(pastDate)).to.be.revertedWith(
+      await expect(this.factory.deployNewSoulFund(pastDate, jurors, jurySwap, minJurySize)).to.be.revertedWith(
         "SoulFundFactory.deployNewSoulFund: vesting must be sometime in the future"
       );
     });
     it("should emit NewSoulFundTokenDeployed event", async function () {
-      let tx = await this.factory.deployNewSoulFund(futureVest);
+      let tx = await this.factory.deployNewSoulFund(futureVest, jurors, jurySwap, minJurySize);
       let txReceipt = await tx.wait();
       let newSoulFundTokenDeployedEvent = txReceipt.events?.filter(
         (events) => events.event == "NewSoulFundTokenDeployed"
@@ -58,7 +79,7 @@ describe("SoulFundFactory", function () {
       expect(newSoulFundTokenDeployedEvent[0].args.vestingDate).to.equal(futureVest);
     });
     it("should should allow minting of new SoulFund token", async function () {
-      let tx = await this.factory.deployNewSoulFund(futureVest);
+      let tx = await this.factory.deployNewSoulFund(futureVest, jurors, jurySwap, minJurySize);
       let txReceipt = await tx.wait();
       let newSoulFundTokenDeployedEvent = txReceipt.events?.filter(
         (events) => events.event == "NewSoulFundTokenDeployed"
@@ -72,7 +93,7 @@ describe("SoulFundFactory", function () {
         .withArgs(ethers.constants.AddressZero, beneficiary.address, 0);
     });
     it("should should allow funding of new SoulFund token", async function () {
-      let tx = await this.factory.deployNewSoulFund(futureVest);
+      let tx = await this.factory.deployNewSoulFund(futureVest, jurors, jurySwap, minJurySize);
       let txReceipt = await tx.wait();
       let newSoulFundTokenDeployedEvent = txReceipt.events?.filter(
         (events) => events.event == "NewSoulFundTokenDeployed"
