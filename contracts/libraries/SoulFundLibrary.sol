@@ -2,8 +2,7 @@
 pragma solidity ^0.8.7;
 
 library SoulFundLibrary {
-    string internal constant TABLE =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    string internal constant TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     function encode(bytes memory data) internal pure returns (string memory) {
         if (data.length == 0) return "";
@@ -43,25 +42,13 @@ library SoulFundLibrary {
                 let input := mload(dataPtr)
 
                 // write 4 characters
-                mstore(
-                    resultPtr,
-                    shl(248, mload(add(tablePtr, and(shr(18, input), 0x3F))))
-                )
+                mstore(resultPtr, shl(248, mload(add(tablePtr, and(shr(18, input), 0x3F)))))
                 resultPtr := add(resultPtr, 1)
-                mstore(
-                    resultPtr,
-                    shl(248, mload(add(tablePtr, and(shr(12, input), 0x3F))))
-                )
+                mstore(resultPtr, shl(248, mload(add(tablePtr, and(shr(12, input), 0x3F)))))
                 resultPtr := add(resultPtr, 1)
-                mstore(
-                    resultPtr,
-                    shl(248, mload(add(tablePtr, and(shr(6, input), 0x3F))))
-                )
+                mstore(resultPtr, shl(248, mload(add(tablePtr, and(shr(6, input), 0x3F)))))
                 resultPtr := add(resultPtr, 1)
-                mstore(
-                    resultPtr,
-                    shl(248, mload(add(tablePtr, and(input, 0x3F))))
-                )
+                mstore(resultPtr, shl(248, mload(add(tablePtr, and(input, 0x3F)))))
                 resultPtr := add(resultPtr, 1)
             }
 
@@ -100,11 +87,7 @@ library SoulFundLibrary {
         return string(buffer);
     }
 
-    function getPercent(uint256 part, uint256 whole)
-        internal
-        pure
-        returns (uint256)
-    {
+    function getPercent(uint256 part, uint256 whole) internal pure returns (uint256) {
         uint256 numerator = part * 1000;
         if (numerator > part && numerator > whole) {
             uint256 temp = numerator / whole;
@@ -115,11 +98,7 @@ library SoulFundLibrary {
     }
 
     // need to fix this algo
-    function getDecimalString(uint256 whole)
-        internal
-        pure
-        returns (string memory)
-    {
+    function getDecimalString(uint256 whole) internal pure returns (string memory) {
         uint256 start = whole / 1 ether;
 
         return toString(start);

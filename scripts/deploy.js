@@ -21,7 +21,7 @@ async function main() {
     "0xfe4F5145f6e09952a5ba9e956ED0C25e3Fa4c7F1",
     "0x326C977E6efc84E512bB9C30f76E30c160eD06FB",
   ];
-  const tokenNames = ["Matic", "DAI", "WETH", "WBTC"];
+  const tokenNames = ["Matic", "DAI", "WETH", "APE"];
   const tokenColors = ["#bba3db", "#d8dba3", "#a3dbc5", "#a3d0db"];
   const aggregators = [
     "0x0715A7794a1dc8e42615F059dD6e406A6594651A",
