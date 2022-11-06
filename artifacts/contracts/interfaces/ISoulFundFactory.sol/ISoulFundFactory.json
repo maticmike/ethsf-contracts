@@ -34,6 +34,21 @@
           "internalType": "uint256",
           "name": "_vestingDate",
           "type": "uint256"
+        },
+        {
+          "internalType": "address[]",
+          "name": "_trustees",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint96",
+          "name": "_swapInterval",
+          "type": "uint96"
+        },
+        {
+          "internalType": "uint8",
+          "name": "_jurySize",
+          "type": "uint8"
         }
       ],
       "name": "deployNewSoulFund",
