@@ -111,20 +111,6 @@ contract Jury is IJury, Pausable {
         }
     }
 
-    function newDisputeSubmission(uint256 _disputeProposalId)
-        external
-        onlyJuryPoolMember
-    {
-        require(
-            disputeProposals[_disputeProposalId].approvedJurors.length >= 2,
-            "Jury.newDisputeSubmission: not enough approvals for dispute"
-        );
-        address plaintiff = disputeProposals[_disputeProposalId].plaintiff;
-        address defendent = disputeProposals[_disputeProposalId].defendent;
-        uint256 deadline = disputeProposals[_disputeProposalId].deadline;
-        _newDispute(plaintiff, defendent, deadline);
-    }
-
     function extendDisputeDeadline(uint256 _disputeId) external {
         //require (half jurors to agree to extension)
         uint256 newDeadline = disputes[_disputeId]
@@ -132,9 +118,21 @@ contract Jury is IJury, Pausable {
         emit DisputeDeadlinePostponed(_disputeId, newDeadline);
     }
 
-    function voteYes() external onlyJuryMember {}
+    function voteYes(uint256 _disputeId) external onlyJuryMember {
+        Dispute dispute = disputes[_disputeId];
+        require(dispute.juryMembers[]);
+        dispute.juryMemberVote[msg.sender] = true;
+        dispute.juryMemberVoteCounter[msg.sender] += 1;
+        emit VotedYes(msg.sender, _disputeId);
+    }
 
-    function voteNo() external onlyJuryMember {}
+    function voteNo() external onlyJuryMember {
+        Dispute dispute = disputes[_disputeId];
+        require(dispute.juryMembers[]);
+        dispute.juryMemberVote[msg.sender] = false;
+        dispute.juryMemberVoteCounter[msg.sender] += 1;
+        emit VotedNo(msg.sender, _disputeId);
+    }
 
     function setJuryType() external {}
 
@@ -154,7 +152,6 @@ contract Jury is IJury, Pausable {
         JuryMember[] memory juryMembers = juries[juryPointer];
         for (uint256 i = 0; i < _juryMembers.length; i++) {
             juryMembers[i].memberAddr = _juryMembers[i];
-            juryMembers[i].vote = false;
         }
         emit JuryDutyCompleted(juryPointer);
     }
@@ -165,6 +162,8 @@ contract Jury is IJury, Pausable {
         address _defendent,
         uint256 _deadline
     ) internal {
+        JuryMember[] memory liveJuryMembers = juries[juryPointer];
+
         disputeId += 1;
         disputes[disputeId] = Dispute({
             juryId: juryPointer,
@@ -172,7 +171,8 @@ contract Jury is IJury, Pausable {
             deadline: _deadline,
             plaintiff: _plaintiff,
             defendent: _defendent,
-            verdict: false
+            verdict: false,
+            juryMembers: liveJuryMembers
         });
         emit NewDispute(disputeId, juryPointer);
     }

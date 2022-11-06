@@ -7,7 +7,6 @@ interface IJury {
         uint256 jurysParticipated;
         uint256 disputesApproved;
         uint256 disputesResolved;
-        bool vote;
     }
 
     struct DisputeProposal {
@@ -25,6 +24,8 @@ interface IJury {
         address plaintiff;
         address defendent;
         bool verdict;
+        mapping(address => bool) juryMemberVote;
+        mapping(address => uint256) juryMemberVoteCounter;
     }
 
     //Jury Events
@@ -32,6 +33,8 @@ interface IJury {
     event NewJuryPoolMember(address juryMemeber);
     event RemovedJuryMember(address juryMember);
     event JuryDutyCompleted(uint256 indexed jurydId);
+    event VotedYes(address indexed juryMember, uint256 disputeId);
+    event VotedNo(address indexed juryMember, uint256 disputeId);
 
     //Dispute Events
     event NewDispute(uint256 juryId, uint256 disputeId);
