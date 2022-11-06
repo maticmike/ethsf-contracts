@@ -31,39 +31,29 @@ async function main() {
     "0x007A22900a3B98143368Bd5906f8E17e9867581b",
   ];
 
+  const gateway = "0xBF62ef1486468a6bd26Dd669C06db43dEd5B849B";
+  const gasreceiver = "0xbE406F0189A0B4cf3A05C286473D23791Dd44Cc6";
+
   const TokenRenderer = await ethers.getContractFactory("TokenRenderer");
   const tokenrenderer = await upgrades.deployProxy(TokenRenderer, [erc20s, tokenNames, tokenColors, aggregators]);
   await tokenrenderer.deployed();
 
-  console.log("TokenRenderer address:", tokenrenderer.address);
+  console.log("TokenRenderer address: ", tokenrenderer.address);
 
-  const beneficiary = deployer.address;
-  const vestingDate = 1691650712;
+  const JuryFactory = await ethers.getContractFactory("JuryFactory");
+  const juryFactory = await JuryFactory.deploy();
 
-  const SoulFund = await ethers.getContractFactory("SoulFund");
+  console.log(`Jury Factory: ${juryFactory.address}`);
 
-  // For upgradeable version
-  const soulfund = await SoulFund.deploy(
-    beneficiary,
-    vestingDate,
+  const SoulFundFactory = await ethers.getContractFactory("SoulFundFactory");
+  const soulFundFactory = await SoulFundFactory.deploy(
     tokenrenderer.address,
-    "0xBF62ef1486468a6bd26Dd669C06db43dEd5B849B",
-    "0xbE406F0189A0B4cf3A05C286473D23791Dd44Cc6"
+    gateway,
+    gasreceiver,
+    juryFactory.address
   );
-  await soulfund.deployed();
 
-  console.log("SoulFund address:", soulfund.address);
-
-  let options = {value: ethers.utils.parseEther("0.01")};
-  let tx = await soulfund.safeMint("0x85C54e29c70b54072C2E6Bbc70e856d56Dd7002A");
-  await tx.wait(1);
-  tx = await soulfund.depositFund(
-    0,
-    "0x0000000000000000000000000000000000000000",
-    ethers.utils.parseEther("0.01"),
-    options
-  );
-  await tx.wait(1);
+  console.log(`SoulFund Factory: ${soulFundFactory.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
