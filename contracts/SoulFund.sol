@@ -27,12 +27,6 @@ contract SoulFund is ISoulFund, ERC721, AccessControl, AxelarExecutable {
 
     uint256 public vestingDate;
 
-    //tokenId (soulfundId) => nftAddress => isWhitelisted
-    mapping(uint256 => mapping(address => bool)) public whitelistedNfts;
-
-    //tokenId (nftProofId) => nftAddress => isSpent
-    mapping(uint256 => mapping(address => bool)) public nftIsSpent;
-
     //tokenId (soulfundId) => fundsRemaining
     //note: you can only have up to five different currencies
     mapping(uint256 => Balances[5]) public balances;
