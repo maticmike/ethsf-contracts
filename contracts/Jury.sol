@@ -134,13 +134,13 @@ contract Jury is IJury, Pausable {
         juryPointer += 1;
         juryIsLive[juryPointer] = true;
         juryIsLive[juryPointer - 1] = false;
+        JuryMember[] memory juryMembers = juries[juryPointer];
         for (uint256 i = 0; i < _juryMembers.length; i++) {
-            // JuryMember juryMember = juries[i];
-            // juries[juryPointer].memberAddr = _juryMembers[i];
-            // juries[juryPonter].jurysParticipated = juryMember.jurysParticipated;
-            // juries[juryPointer].disputesApproved = juryMember.disputesApproved;
-            // juries[juryPointer].disputedResolved = juryMember.disputedResolved;
-            // juries[juryPointer].vote = false;
+            juryMembers[i].memberAddr = _juryMembers[i];
+            juryMembers[i].jurysParticipated = juryMembers[i].jurysParticipated;
+            juryMembers[i].disputesApproved = juryMembers[i].disputesApproved;
+            juryMembers[i].disputesResolved = juryMembers[i].disputesResolved;
+            juryMembers[i].vote = false;
         }
         emit JuryDutyCompleted(juryPointer);
     }
