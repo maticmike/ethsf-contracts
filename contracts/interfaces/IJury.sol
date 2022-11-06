@@ -2,6 +2,11 @@
 pragma solidity ^0.8.7;
 
 interface IJury {
+    struct Votes {
+        bool decision;
+        bool voted;
+    }
+
     struct JuryMember {
         address memberAddr;
         uint256 jurysParticipated;
@@ -24,8 +29,6 @@ interface IJury {
         address plaintiff;
         address defendent;
         bool verdict;
-        mapping(address => bool) juryMemberVote;
-        mapping(address => uint256) juryMemberVoteCounter;
     }
 
     //Jury Events

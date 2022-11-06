@@ -26,6 +26,8 @@ contract Jury is IJury, Pausable {
     mapping(uint256 => JuryMember[]) public juries;
     mapping(uint256 => bool) public juryIsLive;
 
+    mapping(uint256 => mapping(address => Votes)) juryMemberVote;
+
     /** MODIFIER **/
     modifier onlyJuryMember() {
         JuryMember[] memory liveJuryMembers = juries[juryPointer];
@@ -120,7 +122,8 @@ contract Jury is IJury, Pausable {
 
     function voteYes(uint256 _disputeId) external onlyJuryMember {
         Dispute dispute = disputes[_disputeId];
-        require(dispute.juryMembers[]);
+
+        //require(dispute.juryMembers[]);
         dispute.juryMemberVote[msg.sender] = true;
         dispute.juryMemberVoteCounter[msg.sender] += 1;
         emit VotedYes(msg.sender, _disputeId);
